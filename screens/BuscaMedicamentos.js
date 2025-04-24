@@ -8,15 +8,19 @@ import {
   Platform,
   StatusBar,
   SafeAreaView,
-  ActivityIndicator
+  TouchableOpacity,
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
+import { useNavigation } from '@react-navigation/native';
 
 export default function BuscaMedicamentos() {
   const [busca, setBusca] = useState('');
   const [resultados, setResultados] = useState([]);
   const [carregando, setCarregando] = useState(false);
+  const navigation = useNavigation();
 
   const buscarMedicamentos = async (textoBusca) => {
     setCarregando(true);
@@ -45,8 +49,13 @@ export default function BuscaMedicamentos() {
               nome: medData.nome,
               gramas: medData.gramas,
               quantidade: medData.quantidade,
-              farmacia: farmaciaData.nome,
-              endereco: farmaciaData.endereco
+              foto: medData.foto || '',
+              farmacia: {
+                nome: farmaciaData.nome,
+                endereco: farmaciaData.endereco,
+                aberta: farmaciaData.aberta ?? true,
+                localizacao: farmaciaData.localizacao ?? { lat: 0, lng: 0 }
+              }
             });
           }
         });
@@ -77,12 +86,22 @@ export default function BuscaMedicamentos() {
             data={resultados}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <View style={styles.resultado}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Detalhes', { medicamento: item })}
+                style={styles.resultado}
+              >
+                {item.foto ? (
+                  <Image
+                    source={{ uri: item.foto }}
+                    style={styles.imagem}
+                    resizeMode="cover"
+                  />
+                ) : null}
                 <Text style={styles.titulo}>{item.nome} - {item.gramas}</Text>
                 <Text>Quantidade: {item.quantidade}</Text>
-                <Text>Farmácia: {item.farmacia}</Text>
-                <Text>Endereço: {item.endereco}</Text>
-              </View>
+                <Text>Farmácia: {item.farmacia.nome}</Text>
+                <Text>Endereço: {item.farmacia.endereco}</Text>
+              </TouchableOpacity>
             )}
           />
         )}
@@ -119,6 +138,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4
+  },
+  imagem: {
+    width: '100%',
+    height: 150,
+    borderRadius: 8,
+    marginBottom: 8
   }
 });
+
 
